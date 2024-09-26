@@ -1,0 +1,167 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+import cv2
+import tensorflow as tf
+from PIL import Image
+from google.colab.patches import cv2_imshow
+from tensorflow import keras
+from keras.models import Sequential
+from keras.layers import Dense,Flatten
+from keras.datasets import mnist # dataset
+from tensorflow.math import confusion_matrix
+tf.random.set_seed(3)
+
+# load data
+(x_train, y_train), (x_test, y_test) = mnist.load_data()
+type(x_train)
+# check data shape
+
+print(x_train.shape) # (60000, 28, 28)
+print(x_test.shape) # (10000, 28, 28)
+print(y_train.shape) # (60000,)
+print(y_test.shape) # (10000,)
+
+# printing the 10th image
+print(x_train[10])
+print(x_train[10].shape)
+print(y_train[10])
+# displaying the image
+
+# plotting the 10th image
+plt.imshow(x_train[10])
+plt.show()
+
+# print the corresponding label
+print(y_train[25])
+# plotting the 25th image
+plt.imshow(x_train[25])
+plt.show()
+# unique values
+# unique values in Y_train
+print(np.unique(y_train))
+# unique values in x_train
+print(np.unique(x_train))
+
+# normalize the data
+x_train = x_train/255
+x_test = x_test/255
+# printing the 10th image
+
+print(x_train[10])
+# bulid model
+model = Sequential([
+     Flatten(input_shape=(28,28)),
+     Dense(50, activation='relu'),
+     Dense(50, activation='relu'),
+     Dense(10, activation='sigmoid')
+])
+model.summary()
+# model compile
+model.compile(
+    loss=keras.losses.SparseCategoricalCrossentropy(),
+    optimizer=keras.optimizers.Adam(learning_rate=0.001),
+    metrics=['accuracy']
+)
+# model train
+model.fit(x_train, y_train, epochs=10)
+# model evaluation
+loss, accuracy = model.evaluate(x_test, y_test)
+print(accuracy)
+print(x_test.shape)
+# first data point in X_test
+plt.imshow(x_test[0])
+plt.show()
+print(x_test[0])
+# model predict
+Y_pred = model.predict(x_test)
+print(Y_pred.shape)
+print(Y_pred[0])
+print(Y_pred[1])
+print(y_test[1])
+# converting the prediction probabilities to class label
+
+label_for_first_test_image = np.argmax(Y_pred[0])
+print(label_for_first_test_image)
+# converting the prediction probabilities to class label for all test data points
+Y_pred_labels = [np.argmax(i) for i in Y_pred]
+print(Y_pred_labels)
+# Confusin Matrix
+conf_mat = confusion_matrix(y_test, Y_pred_labels)
+print(conf_mat)
+# plotting the confusion matrix
+plt.figure(figsize=(15,7))
+sns.heatmap(conf_mat, annot=True, fmt='d', cmap='Blues')
+plt.ylabel('True Labels')
+plt.xlabel('Predicted Labels')
+plt.show()
+# Building a Predictive System
+input_image_path = '/content/MNIST_digit.png' 
+
+# Verify that the image exists at the specified path and check file permissions
+!ls -l {input_image_path}
+
+input_image = cv2.imread(input_image_path)
+
+# Check if the image was loaded successfully
+if input_image is None:
+  print(f"Error: Could not load image from {input_image_path}. Please check the file path and ensure the image exists.")
+else:
+  type(input_image)
+  print(input_image)
+  cv2_imshow(input_image)
+
+  # Only call cvtColor if input_image is not None
+  grayscale = cv2.cvtColor(input_image, cv2.COLOR_RGB2GRAY)
+  
+  input_image_resize = cv2.resize(grayscale, (28, 28))
+
+  cv2_imshow(input_image_resize)
+
+  input_image_resize = input_image_resize/255
+  
+  image_reshaped = np.reshape(input_image_resize, [1,28,28])
+
+  input_prediction = model.predict(image_reshaped)
+  print(input_prediction)
+
+  input_pred_label = np.argmax(input_prediction)
+  print(f"Predicted Label: {input_pred_label}")
+  print(f"Predicted Probability: {input_prediction[0][input_pred_label]*100}%")
+  
+  input_pred_label = np.argmax(input_prediction)
+  print(f"Predicted Label: {input_pred_label}")
+  print(f"Predicted Probability: {input_prediction[0][input_pred_label]*100}%")
+
+# Predictive System
+input_image_path = input('Path of the image to be predicted: ')
+
+# Use urllib to handle URLs
+import urllib.request
+try:
+  with urllib.request.urlopen(input_image_path) as url:
+    image_array = np.asarray(bytearray(url.read()), dtype=np.uint8)
+    input_image = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
+except urllib.error.URLError as e:
+  print(f"Error loading image from URL: {e}")
+  input_image = None  # Assign None if loading fails
+
+# Proceed only if the image was loaded successfully
+if input_image is not None:  
+  cv2_imshow(input_image)
+
+  grayscale = cv2.cvtColor(input_image, cv2.COLOR_RGB2GRAY)
+
+  input_image_resize = cv2.resize(grayscale, (28, 28))
+
+  input_image_resize = input_image_resize/255
+
+  image_reshaped = np.reshape(input_image_resize, [1,28,28])
+
+  input_prediction = model.predict(image_reshaped)
+
+  input_pred_label = np.argmax(input_prediction)
+
+  print('The Handwritten Digit is recognised as ', input_pred_label)
+else:
+  print("Error: Could not load image. Please check the path or URL.")
